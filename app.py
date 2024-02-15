@@ -68,25 +68,106 @@ def page_not_found(e):
 # -------------------------------- SIGN UP ----------------------------------
 @app.route('/api/signup', methods = ['POST'])
 def signup():
-    user = new_user()
-    if user:
+    user_info = new_user()
+    print("11111")
+    if user_info:
         print("Have user")
-        user_info = {
-            "user_name": user["name"],
-            "password": user["password"],
-            "api_key": user["api_key"]
+        user_json = {
+            "user_name": user_info["name"],
+            "user_id": user_info["id"],
+            "password": user_info["password"],
+            "api_key": user_info["api_key"]
         }
-        return jsonify(user_info), 200
+        print("password" + user_info["password"])
+        return jsonify(user_json), 200
+    return jsonify({"error": "Failed to create a new user"}), 500
+
+# -------------------------------- Login ----------------------------------
+
+@app.route('/api/login', methods = ['POST'])
+def login():
+    if not request.json:
+        return jsonify({"error": "No contents"}), 400
+    user_name = request.json.get('user_name')
+    password = request.json.get('password')
+
+    
+    query = "select * from users where name = ? and password = ?"
+    parameters = (user_name, password)
+    user_info = query_db(query, parameters, one=True)
+    
+    if user_info:
+        print("update user")
+        user_json = {
+            "login": True,
+            "user_id": user_info["id"],
+            "user_name": user_info["name"],
+            "password": user_info["password"],
+            "api_key": user_info["api_key"]
+        }
+        return jsonify(user_json), 200
+    return jsonify({"login": False, "error": "Failed to login"}), 500
+
+# -------------------------------- updateUserName ----------------------------------
+
+@app.route('/api/updateUserName', methods = ['POST'])
+def updateUserName():
+    print("enter")
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+
+    # Update
+    if not request.json:
+        return jsonify({"error": "No contents"}), 400
+    newName = request.json.get('user_name')
+    id = request.json.get('user_id')
+    print(id)
+    
+    updateQuery = "update users set name = ? where id = ?"
+    parameters = (newName, id)
+    query_db(updateQuery, parameters, one=True)
+    if res:
+        print("Have user")
+        user_json = {
+            "update": True,
+        }
+        return jsonify(user_json), 200
     print("Something wrong")
-    return jsonify({"success": False, "error": "Failed to create a new user"}), 500
+    return jsonify({"update": False, "error": "Failed to update, please check the username and password"}), 500    
 
+# -------------------------------- updatePassword ----------------------------------
 
-# def login():
-#   ...
+@app.route('/api/updatePassword', methods = ['POST'])
+def updatePassword():
+    print("enter")
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
 
-
-# @app.route('/api/login')
-# def login():
-#   ... 
-
-# ... etc
+    # Update
+    if not request.json:
+        return jsonify({"error": "No contents"}), 400
+    newPassword = request.json.get('password')
+    id = request.json.get('user_id')
+    print(id)
+    
+    updateQuery = "update users set password = ? where id = ?"
+    parameters = (newPassword, id)
+    query_db(updateQuery, parameters, one=True)
+    if res:
+        print("Have user")
+        user_json = {
+            "update": True,
+        }
+        return jsonify(user_json), 200
+    print("Something wrong")
+    return jsonify({"update": False, "error": "Failed to update, please check the username and password"}), 500    

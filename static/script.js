@@ -82,8 +82,8 @@ window.addEventListener('DOMContentLoaded', function () {
     console.error("No signup Button")
   }
 
-  // click loggedin Button to go to profile
-  const profileButton = document.querySelector(".loggedIn")
+  // click profilelink on the main page to go to profile
+  const profileButton = document.querySelector(".loggedIn a")
   if (profileButton) {
     profileButton.addEventListener("click", function (e) {
       e.preventDefault()
@@ -94,7 +94,21 @@ window.addEventListener('DOMContentLoaded', function () {
     console.error("No logged in Button")
   }
 
+  // click login Button
+  const loginLink = document.querySelector(".loggedOut a")
+  if (loginLink) {
+    loginLink.addEventListener("click", function (e) {
+      e.preventDefault()
+      // Same navigation function
+      onclickSignUp()
+    })
+  }
+  else {
+    console.error("No login Button")
+  }
+
   // -------------------------------- Login Page ----------------------------------
+
   // CreateUsers
   const createUserButton = document.getElementById("createUsers")
   if (createUserButton) {
@@ -107,8 +121,20 @@ window.addEventListener('DOMContentLoaded', function () {
     console.error("No createUser Button")
   }
 
+  // Login
+  const loginButton = document.getElementById("loginUsers")
+  if (loginButton) {
+    loginButton.addEventListener("click", function (e) {
+      e.preventDefault()
+      onclickLogin()
+    })
+  }
+  else {
+    console.error("No createUser Button")
+  }
+
   // -------------------------------- Profile Page ----------------------------------
-  // CreateUsers
+  // LogOutUsers
   const logoutButton = document.querySelector(".exit.logout")
   if (logoutButton) {
     logoutButton.addEventListener("click", function (e) {
@@ -119,12 +145,38 @@ window.addEventListener('DOMContentLoaded', function () {
   else {
     console.error("No logout Button")
   }
+
+  // UpdateUserName
+  const updateUserNameButton = document.getElementById("updateUsername")
+  if (updateUserNameButton) {
+    updateUserNameButton.addEventListener("click", function (e) {
+      e.preventDefault()
+      onclickUpdateName()
+    })
+  }
+  else {
+    console.error("No updateUser Button")
+  }
+
+  // UpdatePassword
+  const updatePasswordButton = document.getElementById("updatePassword")
+  if (updatePasswordButton) {
+    updatePasswordButton.addEventListener("click", function (e) {
+      e.preventDefault()
+      onclickUpdatePassword()
+    })
+  }
+  else {
+    console.error("No updateUser Button")
+  }
 })
 
 
 // -------------------------------- EventListener Page ----------------------------------
 // navigate to login page
 function onclickSignUp () {
+  const failedDiv = document.getElementById('loginFailedMessage')
+  failedDiv.style.display = 'none'
   const state = { path: "/login" }
   const url = "/login"
   history.pushState(state, "", url)
@@ -157,8 +209,55 @@ function onclickCreateUsers () {
     .then(user => {
       localStorage.setItem('userName', user.user_name)
       localStorage.setItem('api_key', user.api_key)
+      localStorage.setItem('user_id', user.user_id)
       showUserName()
       console.log(localStorage)
+      const state = { path: "/" }
+      const url = "/"
+      history.pushState(state, "", url)
+      showPage()
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
+
+// Users Login
+function onclickLogin () {
+  const usernameInput = document.getElementById("usernameInput")
+  const passwordInput = document.getElementById("passwordInput")
+  const user_name = usernameInput.value
+  const password = passwordInput.value
+
+  const user_login_info = {
+    "user_name": user_name,
+    "password": password
+  }
+
+  fetch('/api/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(user_login_info)
+  })
+    .then(response => {
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(user => {
+      if (user.login) {
+        console.log(user)
+        localStorage.setItem('userName', user.user_name)
+        localStorage.setItem('api_key', user.api_key)
+        localStorage.setItem('user_id', user.user_id)
+        showUserName()
+        console.log(localStorage)
+        const state = { path: "/" }
+        const url = "/"
+        history.pushState(state, "", url)
+        showPage()
+      }
+      else {
+        document.getElementById('loginFailedMessage').style.display = 'block'
+      }
     })
     .catch(error => console.error('There was a problem with your fetch operation:', error))
 }
@@ -167,6 +266,7 @@ function onclickCreateUsers () {
 function onclickLogOut () {
   localStorage.removeItem("userName")
   localStorage.removeItem("api_key")
+  localStorage.removeItem("user_id")
   console.log(localStorage)
   const state = { path: "/" }
   const url = "/"
@@ -174,6 +274,80 @@ function onclickLogOut () {
   showPage()
   showUserName()
 }
+
+// Update user name
+function onclickUpdateName () {
+  const usernameInput = document.getElementById("updateUserNameInput")
+  const user_name = usernameInput.value
+
+  const name_update_info = {
+    "user_name": user_name,
+    "user_id": localStorage.getItem('user_id')
+  }
+
+  fetch('/api/updateUserName', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
+    },
+    body: JSON.stringify(name_update_info)
+  })
+    .then(response => {
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(user => {
+      if (user.update) {
+        console.log(user)
+        localStorage.setItem('userName', user_name)
+        showUserName()
+        console.log(localStorage)
+        showPage()
+      }
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
+
+
+// Update password
+function onclickUpdatePassword () {
+  const pwdInput = document.getElementById("updatePasswordInput")
+  const pwd = pwdInput.value
+  const repeatInput = document.getElementById("repeatPasswordInput")
+  const repeatPwd = repeatInput.value
+
+  const pwdError = document.getElementById('pwdnotmatch')
+  pwdError.style.display = 'none'
+
+  if (pwd != repeatPwd) {
+    pwdError.style.display = 'block'
+    return
+  }
+
+  const pwd_update_info = {
+    "password": pwd,
+    "user_id": localStorage.getItem('user_id')
+  }
+
+  fetch('/api/updatePassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
+    },
+    body: JSON.stringify(pwd_update_info)
+  })
+    .then(response => {
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(user => {
+      if (user.update) {
+        showPage()
+      }
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
+
 
 
 
