@@ -1,8 +1,9 @@
 import string
 import random
 from datetime import datetime
-from flask import Flask, g
+from flask import *
 from functools import wraps
+import sqlite3
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -64,7 +65,22 @@ def page_not_found(e):
 
 # TODO: Create the API
 
-# @app.route('/api/signup')
+# -------------------------------- SIGN UP ----------------------------------
+@app.route('/api/signup', methods = ['POST'])
+def signup():
+    user = new_user()
+    if user:
+        print("Have user")
+        user_info = {
+            "user_name": user["name"],
+            "password": user["password"],
+            "api_key": user["api_key"]
+        }
+        return jsonify(user_info), 200
+    print("Something wrong")
+    return jsonify({"success": False, "error": "Failed to create a new user"}), 500
+
+
 # def login():
 #   ...
 
