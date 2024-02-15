@@ -171,3 +171,59 @@ def updatePassword():
         return jsonify(user_json), 200
     print("Something wrong")
     return jsonify({"update": False, "error": "Failed to update, please check the username and password"}), 500    
+
+# -------------------------------- createRooms ----------------------------------
+
+@app.route('/api/room/create', methods = ['POST'])
+def createRoom():
+    print("enter")
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+
+    # Insert a new Room
+    room = query_db('insert into rooms (name) values (?) returning id, name', ["room"], one=True)
+    print(room["id"])
+    query = "update rooms set name = ? where id = ?"
+    roomName = "Room" + str(room["id"])
+    parameters = (roomName, room["id"])
+    query_db(query, parameters, one=True)
+    if query:
+        print("Have user")
+        room_create = {
+            "create": True,
+        }
+        return jsonify(room_create), 200
+    print("Something wrong")
+    return jsonify({"create": False, "error": "Failed to update, please check the username and password"}), 500    
+
+
+@app.route('/api/room/showRoom', methods = ['GET'])
+def showRoom():
+    # GetRoomsList
+    rooms = query_db(query = 'select * from rooms')
+    if rooms:
+        roomList = []
+        for room in rooms:
+            print(room["id"])
+            room_info = {"room_id": room["id"], "room_name": room["name"]}
+            roomList.append(room_info)
+
+        return jsonify(roomList), 200
+    print("Something wrong")
+    return jsonify({"error": "Failed to get rooms"}), 500    
+
+@app.route('/api/room/<int:room_id>', methods = ['GET'])
+def enterRoom(room_id):
+    # GetRoomsList
+    query = 'select * from rooms where id = ?'
+    parameters = (room_id,)
+    room = query_db(query, parameters, one=True)
+    if room:
+        return jsonify(dict(room)), 200
+    print("Something wrong")
+    return jsonify({"error": "Failed to get rooms"}), 500    

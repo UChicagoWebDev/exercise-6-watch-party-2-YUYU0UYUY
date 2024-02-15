@@ -61,11 +61,14 @@ window.addEventListener('DOMContentLoaded', function () {
   showPage()
   // Show the user information
   showUserName()
+  // Show all rooms
+  showRooms()
 
   window.addEventListener('popstate', (event) => {
     console.log("Popstate event triggered", event.state)
     showPage()
     showUserName()
+    showRooms()
   })
 
   // -------------------------------- Main Page ----------------------------------
@@ -101,6 +104,20 @@ window.addEventListener('DOMContentLoaded', function () {
       e.preventDefault()
       // Same navigation function
       onclickSignUp()
+    })
+  }
+  else {
+    console.error("No login Button")
+  }
+
+
+  // click createRoom Button
+  const createRoomButton = document.getElementById("createRoom")
+  if (createRoomButton) {
+    createRoomButton.addEventListener("click", function (e) {
+      e.preventDefault()
+      // createRoom
+      onclickCreateRoom()
     })
   }
   else {
@@ -348,6 +365,25 @@ function onclickUpdatePassword () {
     .catch(error => console.error('There was a problem with your fetch operation:', error))
 }
 
+// createRooms
+function onclickCreateRoom () {
+  fetch('/api/room/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
+    },
+  })
+    .then(response => {
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(user => {
+      if (user.update) {
+        showPage()
+      }
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
 
 
 
@@ -397,4 +433,46 @@ function showUserName () {
   })
 }
 
+// Show rooms on the main page
+function showRooms () {
+  fetch('/api/room/showRoom', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(rooms => {
+      console.log(rooms)
+      const noRoom = document.querySelector(".noRooms")
+      if (rooms.length > 0) {
+        const roomsDiv = document.querySelector(".roomList")
+        roomsDiv.innerHTML = ""
+
+        rooms.forEach(room => {
+          const roomLink = document.createElement('a')
+          roomLink.innerHTML = `${room.room_id}: <strong> ${room.room_name} </strong>`
+          roomLink.addEventListener("click", function (e) {
+            e.preventDefault()
+            const state = { path: `/rooms/${room.room_id}` }
+            const url = `/rooms/${room.room_id}`
+            history.pushState(state, "", url)
+            showPage()
+          })
+          roomsDiv.appendChild(roomLink)
+        })
+        noRoom.style.display = "none"
+
+      }
+      else {
+        noRoom.style.display = "block"
+      }
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
 
