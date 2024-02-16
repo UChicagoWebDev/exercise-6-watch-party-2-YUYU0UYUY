@@ -56,7 +56,14 @@ repeatPasswordField.addEventListener("input", checkPasswordRepeat)
 
 // On page load, show the appropriate page and hide the others
 window.addEventListener('DOMContentLoaded', function () {
+  refresh()
+})
 
+window.addEventListener('popstate', (event) => {
+  refresh()
+})
+
+function refresh () {
   // -------------------------------- Load ----------------------------------  
 
   // Show the page currently in and hide unused page
@@ -66,12 +73,6 @@ window.addEventListener('DOMContentLoaded', function () {
   // Show all rooms
   showRooms()
 
-  window.addEventListener('popstate', (event) => {
-    console.log("Popstate event triggered", event.state)
-    showPage()
-    showUserName()
-    showRooms()
-  })
 
   // -------------------------------- Main Page ----------------------------------
 
@@ -88,11 +89,21 @@ window.addEventListener('DOMContentLoaded', function () {
   }
 
   // click profilelink on the main page to go to profile
-  const profileButton = document.querySelector(".loggedIn a")
-  if (profileButton) {
-    profileButton.addEventListener("click", function (e) {
-      e.preventDefault()
-      onclickProfile()
+  const profileButtons = document.querySelectorAll(".loggedIn")
+  if (profileButtons) {
+    const user_id = localStorage.getItem("user_id")
+    profileButtons.forEach(button => {
+      if (user_id) {
+        button.classList.remove("hide")
+      }
+      else {
+        button.classList.add("hide")
+      }
+
+      button.addEventListener("click", function (e) {
+        e.preventDefault()
+        onclickProfile()
+      })
     })
   }
   else {
@@ -100,8 +111,16 @@ window.addEventListener('DOMContentLoaded', function () {
   }
 
   // click login Button
-  const loginLink = document.querySelector(".loggedOut a")
+  const loginLink = document.querySelector(".loggedOut")
   if (loginLink) {
+    const user_id = localStorage.getItem("user_id")
+    if (user_id) {
+      loginLink.classList.add("hide")
+    }
+    else {
+      loginLink.classList.remove("hide")
+    }
+
     loginLink.addEventListener("click", function (e) {
       e.preventDefault()
       // Same navigation function
@@ -188,7 +207,7 @@ window.addEventListener('DOMContentLoaded', function () {
   else {
     console.error("No updateUser Button")
   }
-})
+}
 
 // -------------------------------- Room Page ----------------------------------
 // Post messages
@@ -217,7 +236,7 @@ function onclickSignUp () {
   const state = { path: "/login" }
   const url = "/login"
   history.pushState(state, "", url)
-  showPage()
+  window.dispatchEvent(new Event('popstate'))
 }
 
 // navigate to login page
@@ -225,7 +244,7 @@ function onclickProfile () {
   const state = { path: "/profile" }
   const url = "/profile"
   history.pushState(state, "", url)
-  showPage()
+  window.dispatchEvent(new Event('popstate'))
 }
 
 
@@ -252,7 +271,7 @@ function onclickCreateUsers () {
       const state = { path: "/" }
       const url = "/"
       history.pushState(state, "", url)
-      showPage()
+      window.dispatchEvent(new Event('popstate'))
     })
     .catch(error => console.error('There was a problem with your fetch operation:', error))
 }
@@ -290,7 +309,7 @@ function onclickLogin () {
         const state = { path: "/" }
         const url = "/"
         history.pushState(state, "", url)
-        showPage()
+        window.dispatchEvent(new Event('popstate'))
       }
       else {
         document.getElementById('loginFailedMessage').style.display = 'block'
@@ -308,8 +327,7 @@ function onclickLogOut () {
   const state = { path: "/" }
   const url = "/"
   history.pushState(state, "", url)
-  showPage()
-  showUserName()
+  window.dispatchEvent(new Event('popstate'))
 }
 
 // Update user name
@@ -632,7 +650,7 @@ function showRooms () {
             const state = { path: `/room/${room.room_id}` }
             const url = `/room/${room.room_id}`
             history.pushState(state, "", url)
-            showPage()
+            window.dispatchEvent(new Event('popstate'))
             enterRoom()
           })
           roomsDiv.appendChild(roomLink)
