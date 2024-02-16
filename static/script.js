@@ -414,6 +414,7 @@ function getMessages () {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
     },
   })
     .then(response => {
@@ -451,6 +452,7 @@ function onclickPostMessage () {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
     },
     body: JSON.stringify(message_post)
   })
@@ -478,6 +480,7 @@ function enterRoom () {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
     },
   })
     .then(response => {
@@ -524,6 +527,7 @@ function editRoomName () {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'API-Key': localStorage.getItem('api_key')
       },
       body: JSON.stringify(roomName)
     })
@@ -604,6 +608,7 @@ function showRooms () {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      'API-Key': localStorage.getItem('api_key')
     },
   })
     .then(response => {

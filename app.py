@@ -204,6 +204,14 @@ def createRoom():
 
 @app.route('/api/room/showRoom', methods = ['GET'])
 def showRoom():
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+
     # GetRoomsList
     rooms = query_db(query = 'select * from rooms')
     if rooms:
@@ -219,6 +227,14 @@ def showRoom():
 # Show all messages in the room get
 @app.route('/api/room/<int:room_id>/messages', methods = ['GET'])
 def getMessages(room_id):
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+    
     messages = query_db('select users.name, messages.body, messages.id from messages join users on messages.user_id = users.id where messages.room_id  = ? order by messages.id asc', [room_id])
     message_in_room = []
     if not messages:
@@ -234,6 +250,14 @@ def getMessages(room_id):
 # POST to post a new message to a room
 @app.route('/api/room/<int:room_id>/messages', methods=['POST'])
 def post_messages(room_id):
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+    
     if not request.json:
         return jsonify({"error": "No contents"}), 400
     content = request.json.get('m_body')
@@ -248,6 +272,14 @@ def post_messages(room_id):
 # Enter room 
 @app.route('/api/room/<int:room_id>', methods = ['GET'])
 def emterRoom(room_id):
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+    
     # Get the room
     room = query_db('select * from rooms where id = ?', [room_id], one = True)
     if room:
@@ -262,6 +294,14 @@ def emterRoom(room_id):
 # POST to change the name of a room
 @app.route('/api/room/<int:room_id>/changeRoomName', methods=['POST'])
 def change_room_name(room_id):
+    # Check API Key
+    key = request.headers.get('API-Key')
+    print(key)
+    apiQuery = 'select * from users where api_key = ?'
+    res = query_db(apiQuery, (key,), one = True)
+    if not key or not res:
+        return jsonify({"message": "Not valid API key."}), 401    
+    
     print("change name")
     if not request.json:
         return jsonify({"error": "No contents"}), 400
