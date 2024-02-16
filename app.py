@@ -209,7 +209,6 @@ def showRoom():
     if rooms:
         roomList = []
         for room in rooms:
-            print(room["id"])
             room_info = {"room_id": room["id"], "room_name": room["name"]}
             roomList.append(room_info)
 
@@ -217,13 +216,58 @@ def showRoom():
     print("Something wrong")
     return jsonify({"error": "Failed to get rooms"}), 500    
 
+# Show all messages in the room get
+@app.route('/api/room/<int:room_id>/messages', methods = ['GET'])
+def getMessages(room_id):
+    messages = query_db('select users.name, messages.body, messages.id from messages join users on messages.user_id = users.id where messages.room_id  = ? order by messages.id asc', [room_id])
+    message_in_room = []
+    if not messages:
+        return jsonify(message_in_room), 200
+    for message in messages:
+        m_info = {"m_id": message[2], "user_name": message[0], "m_body": message[1]}
+        message_in_room.append(m_info)
+
+    print(message_in_room[0]["user_name"])
+    return jsonify(message_in_room), 200
+
+
+# POST to post a new message to a room
+@app.route('/api/room/<int:room_id>/messages', methods=['POST'])
+def post_messages(room_id):
+    if not request.json:
+        return jsonify({"error": "No contents"}), 400
+    content = request.json.get('m_body')
+    user_id = request.json.get('user_id')
+
+    query = "insert into messages (body, room_id, user_id) values (?, ?, ?)"
+    parameters = (content, room_id, user_id)
+    query_db(query, parameters)
+    return jsonify({"message": "Message posted successfully"}), 201
+
+
+# Enter room 
 @app.route('/api/room/<int:room_id>', methods = ['GET'])
-def enterRoom(room_id):
-    # GetRoomsList
-    query = 'select * from rooms where id = ?'
-    parameters = (room_id,)
-    room = query_db(query, parameters, one=True)
+def emterRoom(room_id):
+    # Get the room
+    room = query_db('select * from rooms where id = ?', [room_id], one = True)
     if room:
-        return jsonify(dict(room)), 200
+        room_info = {"room_id": room["id"], "room_name": room["name"]}
+        return jsonify(room_info), 200
     print("Something wrong")
     return jsonify({"error": "Failed to get rooms"}), 500    
+
+
+# Change room name 
+
+# POST to change the name of a room
+@app.route('/api/room/<int:room_id>/changeRoomName', methods=['POST'])
+def change_room_name(room_id):
+    print("change name")
+    if not request.json:
+        return jsonify({"error": "No contents"}), 400
+    
+    newRoomName = request.json.get('name')
+    query = 'UPDATE rooms SET name = ? where id = ?'
+    parameters = (newRoomName, room_id)
+    query_db(query, parameters)
+    return jsonify({"message": "Room name changed successfully"}), 201

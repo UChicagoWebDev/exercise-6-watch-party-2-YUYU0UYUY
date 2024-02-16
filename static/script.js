@@ -4,6 +4,8 @@ const PROFILE = document.querySelector(".profile")
 const LOGIN = document.querySelector(".login")
 const ROOM = document.querySelector(".room")
 
+let messagePolls = null
+
 // Custom validation on the password reset fields
 const passwordField = document.querySelector(".profile input[name=password]")
 const repeatPasswordField = document.querySelector(".profile input[name=repeatPassword]")
@@ -188,8 +190,26 @@ window.addEventListener('DOMContentLoaded', function () {
   }
 })
 
+// -------------------------------- Room Page ----------------------------------
+// Post messages
+const postButton = document.getElementById("postButton")
+if (postButton) {
+  postButton.addEventListener('click', function (event) {
+    console.log("Post messages")
+    event.preventDefault()
+    onclickPostMessage()
+  })
+}
 
-// -------------------------------- EventListener Page ----------------------------------
+editButton = document.querySelector("#editbutton")
+if (editButton) {
+  editButton.addEventListener('click', function (event) {
+    event.preventDefault()
+    editRoomName()
+  })
+}
+
+// -------------------------------- EventListener  ----------------------------------
 // navigate to login page
 function onclickSignUp () {
   const failedDiv = document.getElementById('loginFailedMessage')
@@ -379,13 +399,151 @@ function onclickCreateRoom () {
     })
     .then(user => {
       if (user.update) {
+        showRooms()
         showPage()
       }
     })
     .catch(error => console.error('There was a problem with your fetch operation:', error))
 }
 
+// Get messages in the room
+function getMessages () {
+  room_id = localStorage.getItem('room_id')
+  console.log(room_id)
+  fetch(`/api/room/${room_id}/messages`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(messages => {
+      clearChatMessages()
+      console.log("100ms polling")
+      messages.forEach(message => {
+        showMessage(message)
+      })
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
 
+// Post messages to the chatroom
+function onclickPostMessage () {
+  const postTextArea = document.getElementById("postText")
+  const content = postTextArea.value
+  console.log(content)
+  if (!content) {
+    alert("No messages entered!!!!")
+    return
+  }
+  const message_post = {
+    "m_body": content,
+    "user_id": localStorage.getItem("user_id")
+  }
+
+  const room_id = localStorage.getItem("room_id")
+  fetch(`/api/room/${room_id}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message_post)
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(() => {
+      // Clear the textbox
+      postTextArea.value = ""
+      showPage()
+    }
+    )
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
+
+
+// Get messages in the room
+function enterRoom () {
+  room_id = localStorage.getItem('room_id')
+  console.log(room_id)
+  fetch(`/api/room/${room_id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json() // Assuming the API returns JSON data
+    })
+    .then(room => {
+      const displayRoomName = document.querySelector(".displayRoomName strong")
+      displayRoomName.innerHTML = room.room_name
+
+      const editText = document.querySelector(".editRoomName")
+      editText.classList.add("hide")
+
+      // invite
+      const inviteButton = document.getElementById("inviteButton")
+      inviteButton.textContent = window.location.pathname
+      // poll
+      startMessagePolling()
+    })
+    .catch(error => console.error('There was a problem with your fetch operation:', error))
+}
+
+function editRoomName () {
+  const saveButton = document.querySelector("#savebutton")
+  const displayDiv = document.querySelector(".displayRoomName")
+  const editDiv = document.querySelector(".editRoomName")
+  const nameInput = document.querySelector("#roomNameInput")
+
+  // When click on the edit button show the edit input and hide the display div
+  displayDiv.classList.add("hide")
+  editDiv.classList.remove("hide")
+
+  saveButton.addEventListener('click', function (event) {
+    event.preventDefault()
+    editDiv.classList.add("hide")
+    displayDiv.classList.remove("hide")
+
+    const roomName = { "name": nameInput.value }
+    const room_id = localStorage.getItem("room_id")
+
+    fetch(`/api/room/${room_id}/changeRoomName`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(roomName)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
+        }
+        return response.json() // Assuming the API returns JSON data
+      })
+      .then(() => {
+        // Clear the textbox
+        const displayRoomName = document.querySelector(".displayRoomName strong")
+        displayRoomName.innerHTML = nameInput.value
+        nameInput.value = ""
+        showPage()
+      }
+      )
+      .catch(error => console.error('There was a problem with your fetch operation:', error))
+  })
+}
 
 // -------------------------------- helper ----------------------------------
 // Show page currently in
@@ -399,21 +557,28 @@ function showPage () {
   // Main page
   if (path == "/") {
     SPLASH.classList.remove("hide")
+    stopMessagePolling()
   }
   // Profile Page
   else if (path == "/profile") {
     PROFILE.classList.remove("hide")
+    stopMessagePolling()
   }
   // Login Page
   else if (path == "/login") {
     LOGIN.classList.remove("hide")
+    stopMessagePolling()
   }
   // Chat Room page
-  else if (path.startsWith("/rooms/")) {
+  else if (path.startsWith("/room/")) {
     ROOM.classList.remove("hide")
+    const roomNo = path.split("/room/")[1]
+    clearChatMessages()
+    localStorage.setItem('room_id', roomNo)
+    enterRoom()
   }
   else {
-
+    stopMessagePolling()
   }
 }
 
@@ -459,10 +624,11 @@ function showRooms () {
           roomLink.innerHTML = `${room.room_id}: <strong> ${room.room_name} </strong>`
           roomLink.addEventListener("click", function (e) {
             e.preventDefault()
-            const state = { path: `/rooms/${room.room_id}` }
-            const url = `/rooms/${room.room_id}`
+            const state = { path: `/room/${room.room_id}` }
+            const url = `/room/${room.room_id}`
             history.pushState(state, "", url)
             showPage()
+            enterRoom()
           })
           roomsDiv.appendChild(roomLink)
         })
@@ -476,3 +642,39 @@ function showRooms () {
     .catch(error => console.error('There was a problem with your fetch operation:', error))
 }
 
+// Clear messages
+function clearChatMessages () {
+  const chatBox = document.querySelector(".messages")
+  chatBox.innerHTML = ""
+}
+
+// Show messages
+function showMessage (message) {
+  const chatBox = document.querySelector(".messages")
+  const messageDiv = document.createElement("message")
+  const author = document.createElement("author")
+  const content = document.createElement("content")
+  content.textContent = message.m_body
+  author.textContent = message.user_name
+  messageDiv.appendChild(author)
+  messageDiv.appendChild(content)
+  chatBox.appendChild(messageDiv)
+}
+
+
+function test () {
+  console.log(5555555)
+}
+
+function startMessagePolling () {
+  if (messagePolls) {
+    clearInterval(messagePolls)
+    messagePolls = null
+  }
+  messagePolls = setInterval(getMessages, 500)
+}
+
+function stopMessagePolling () {
+  clearInterval(messagePolls)
+  messagePolls = null
+}

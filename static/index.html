@@ -114,17 +114,17 @@
         <div class="displayRoomName"> <!-- TODO: Show me by default. Hide when user clicks the edit icon below -->
           <h3>
             Chatting in <strong>{{ room.name }}</strong>
-            <a><span class="material-symbols-outlined md-18">edit</span></a>
+            <a id="editbutton"><span class="material-symbols-outlined md-18">edit</span></a>
           </h3>
         </div>
         <div class="editRoomName"> <!-- TODO: Hide me by default. Show when user clicks the edit icon above -->
           <h3>
-            Chatting in <input>
-            <button>Update</button>
+            Chatting in <input id="roomNameInput">
+            <button id="savebutton">Update</button>
           </h3>
         </div>
         Invite users to this chat at:
-        <a>/rooms/{{ room_id }}</a>
+        <a id="inviteButton">/rooms/{{ room_id }}</a>
       </div>
       <div class="loginHeader">
         <div class="loggedIn">
@@ -141,10 +141,10 @@
         <div class="chat">
           <div class="comment_box">
             <label for="comment">What do you have to say?</label>
-            <textarea name="comment"></textarea>
-            <button type="submit" value="Post">Post</button>
+            <textarea name="comment" id="postText"></textarea>
+            <button type="submit" value="Post" id="postButton">Post</button>
           </div>
-          <div class="messages"> <!-- TODO: Replace with the content returned by the API -->
+          <div class="messages" id="chatbox"> <!-- TODO: Replace with the content returned by the API -->
             <message>
               <author>Mr Chatterworth</author>
               <content>Good evening! And how is everyone feeling?</content>
