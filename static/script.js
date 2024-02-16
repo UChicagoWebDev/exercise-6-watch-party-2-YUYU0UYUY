@@ -79,6 +79,14 @@ function refresh () {
   // click Signup Button
   const signUpButton = document.querySelector(".signup")
   if (signUpButton) {
+    const user_id = localStorage.getItem("user_id")
+    if (user_id) {
+      signUpButton.classList.add("hide")
+    }
+    else {
+      signUpButton.classList.remove("hide")
+    }
+
     signUpButton.addEventListener("click", function (e) {
       e.preventDefault()
       onclickSignUp()
@@ -135,6 +143,14 @@ function refresh () {
   // click createRoom Button
   const createRoomButton = document.getElementById("createRoom")
   if (createRoomButton) {
+    const user_id = localStorage.getItem("user_id")
+    if (user_id) {
+      createRoomButton.classList.remove("hide")
+    }
+    else {
+      createRoomButton.classList.add("hide")
+    }
+
     createRoomButton.addEventListener("click", function (e) {
       e.preventDefault()
       // createRoom
